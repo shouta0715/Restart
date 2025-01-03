@@ -10,6 +10,9 @@ import SwiftUI
 struct OnBoardingView: View {
     // MARK: - PROPERTIES
     @AppStorage("onboarding") var isOnboardingViewActive: Bool = true
+    @State private var buttonWidth: Double = UIScreen.main.bounds.width - 80
+    @State private var buttonOffset: CGFloat = 0
+    @State private var isAnimating: Bool = false
     
     // MARK: - BODY
     var body: some View {
@@ -38,23 +41,19 @@ struct OnBoardingView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal,10)
                 }
+                .opacity(isAnimating ? 1 : 0)
+                .offset(y: isAnimating ? 0 : -40)
+                .animation(.easeOut(duration: 1),value: isAnimating)
                 
                 // MARK: - CENTER
                 
                 ZStack{
-                    ZStack{
-                        Circle()
-                            .stroke(.white.opacity(0.2),lineWidth: 40)
-                            .frame(width: 260,height: 260,alignment: .center)
-                        
-                        Circle()
-                            .stroke(.white.opacity(0.2),lineWidth: 80)
-                            .frame(width: 260,height: 260,alignment: .center)
-                        
-                    } //: ZStack
+                    CircleGroupView(ShapeColor: .white, ShapeOpacity: 0.2)
                     Image(.character1)
                         .resizable()
                         .scaledToFit()
+                        .opacity(isAnimating ? 1 : 0)
+                        .animation(.easeOut(duration: 0.5),value: isAnimating)
                 } //: CENTER
                 
                 Spacer()
@@ -71,7 +70,7 @@ struct OnBoardingView: View {
                     
                     Capsule()
                         .fill(.white.opacity(0.2))
-                        .padding(8)
+                        
                     // 2. CALL-TO-ACTION
                     Text("Get Started")
                         .font(.system(.title3,design: .rounded))
@@ -84,7 +83,7 @@ struct OnBoardingView: View {
                     HStack {
                         Capsule()
                             .fill(.colorRed)
-                            .frame(width: 80)
+                            .frame(width: buttonOffset + 80)
                         Spacer()
                     }
                     
@@ -103,20 +102,42 @@ struct OnBoardingView: View {
                         }
                         .foregroundColor(.white)
                         .frame(width: 80,height: 80,alignment: .center)
-                        .onTapGesture {
-                            isOnboardingViewActive = false
-                        }
+                        .offset(x:buttonOffset)
+                        .gesture(
+                            DragGesture()
+                                .onChanged{gesture in
+                                    let width = gesture.translation.width
+                                    if width > 0 && buttonOffset <= buttonWidth - 80 {
+                                        buttonOffset = width
+                                    }
+                                }
+                                .onEnded { _ in
+                                  
+                                    if buttonOffset > buttonWidth / 2 {
+                                        buttonOffset = buttonWidth - 80
+                                        isOnboardingViewActive = false
+                                    } else {
+                                        buttonOffset = 0
+                                    }
+                                  
+                                }
+                        ) //: GESTURE
                         
                         Spacer()
                     } //: Hstack
                     
                     
                 } // : FOOTER
-                .frame(height: 80,alignment: .center)
+                .frame(width: buttonWidth, height: 80,alignment: .center)
                 .padding()
-                    
+                .opacity(isAnimating ? 1 : 0)
+                .offset(y: isAnimating ? 0 : 40)
+                .animation(.easeOut(duration: 1),value: isAnimating)
             } //: VStack
         } //: ZStack
+        .onAppear {
+            isAnimating = true
+        }
     }
 }
 
